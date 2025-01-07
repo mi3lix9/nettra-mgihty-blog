@@ -1,35 +1,55 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { generateText } from 'ai';
-import { readFile } from 'fs/promises';
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateText } from "ai";
 import { Bot } from "grammy";
+import { readFile } from "fs/promises";
 
 const google = createGoogleGenerativeAI();
-const model = google('gemini-2.0-flash-exp', {
+const model = google("gemini-2.0-flash-exp", {
   useSearchGrounding: true,
 });
 
-// Read system prompt from file
-const system = await readFile('system-prompt.txt', 'utf-8');
+// Read system prompt from file with error handling
+let system = `You are Nettra, an AI assistant. Default system prompt could not be loaded.`;
+try {
+  system = await readFile("system-prompt.txt", "utf-8");
+} catch (error) {
+  console.error(
+    `[CRITICAL] Failed to load system prompt: ${
+      error instanceof Error ? error.message : "Unknown error"
+    }`
+  );
+  // Optionally send an alert or log to monitoring system
+}
 
 // Create an instance of the `Bot` class and pass your bot token to it.
 const bot = new Bot(process.env.BOT_TOKEN!); // <-- put your bot token between the ""
 
-// You can now register listeners on your bot object `bot`.
-// grammY will call the listeners when users send messages to your bot.
-
-// Handle the /start command.
-// bot.command("start", (ctx) => ctx.reply("Welcome! Up and running."));
 // Handle other messages.
 bot.on("message:text", async (ctx) => {
-  ctx.replyWithChatAction("typing")
-  const prompt = ctx.message.text
-  const { text, experimental_providerMetadata } = await generateText({ model, prompt, system });
+  try {
+    ctx.replyWithChatAction("typing");
+    const prompt = ctx.message.text;
+    const { text, experimental_providerMetadata } = await generateText({
+      model,
+      prompt,
+      system,
+    });
 
-  await ctx.reply(text, { parse_mode: "HTML" })
+    await ctx.reply(text, { parse_mode: "Markdown" });
+  } catch (error) {
+    console.error(
+      `[ERROR] Message processing failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+    await ctx.reply(
+      "Sorry, I'm experiencing technical difficulties. Please try again later."
+    );
+  }
 });
 
-// Now that you specified how to handle messages, you can start your bot.
-// This will connect to the Telegram servers and wait for messages.
-
 // Start the bot.
-bot.start();
+bot.start({
+  onStart: (botInfo) =>
+    console.log("The bot is running on https://t.me/" + botInfo.username),
+});
