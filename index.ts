@@ -25,7 +25,7 @@ bot.on("message:text", async (ctx) => {
   const prompt = ctx.message.text
   const { text, experimental_providerMetadata } = await generateText({ model, prompt, system });
 
-  await ctx.reply(text, { parse_mode: "Markdown" })
+  await ctx.reply(text, { parse_mode: "HTML" })
 });
 
 // Now that you specified how to handle messages, you can start your bot.
