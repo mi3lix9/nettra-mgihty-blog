@@ -26,7 +26,6 @@ async function handleTextGeneration(
 
     clearInterval(interval);
     const splittedText = splitTelegramMessage(makeRTLIfArabic(text));
-    console.log(splittedText);
 
     let lastMessage: Message | undefined;
     for (const text of splittedText) {
